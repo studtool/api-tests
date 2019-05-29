@@ -5,6 +5,13 @@ import time
 import unittest
 
 import requests
+import sys
+
+DEBUG = "-doc" in sys.argv
+
+if DEBUG:
+    sys.argv.remove("-doc")
+    print("DEBUG mode on\n")
 
 DELAY_INTERVAL = 2  # seconds
 
@@ -43,6 +50,8 @@ class TestSum(unittest.TestCase):
             'password': rand_password(),
         }
 
+        if DEBUG: print("credentials: ", credentials)
+
         r = requests.post(url=make_public_api_url('/auth/profiles'), json=credentials)
         self.assertEqual(r.status_code, 200)
 
@@ -65,6 +74,8 @@ class TestSum(unittest.TestCase):
             'Authorization': 'Bearer ' + auth_token
         }
 
+        if DEBUG: print("Headers: ", headers)
+
         r = requests.get(url=make_protected_api_url('/documents?owner_id=' + user_id), headers=headers)
         self.assertEqual(r.status_code, 404)
 
@@ -80,11 +91,15 @@ class TestSum(unittest.TestCase):
         document_id = document_info['documentId']
         self.assertNotEqual(document_id, '')
 
+        if DEBUG: print("document_id: ", document_id)
+
         r = requests.get(url=make_protected_api_url('/documents/' + document_id + '/content'), headers=headers)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b'')
 
         document_content = b'raw_document_content'
+        
+        if DEBUG: print("document_content: ", document_content)
 
         r = requests.patch(url=make_protected_api_url('/documents/' + document_id + '/content'),
                            data=document_content, headers=headers)
