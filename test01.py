@@ -10,7 +10,7 @@ import sys
 DEBUG = "-doc" in sys.argv
 
 if DEBUG:
-    sys.argv.pop()
+    sys.argv.remove("-doc")
     print("DEBUG mode on\n")
 
 DELAY_INTERVAL = 2  # seconds
