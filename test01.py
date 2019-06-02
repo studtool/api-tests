@@ -44,16 +44,20 @@ def rand_password() -> str:
 
 
 class TestSum(unittest.TestCase):
-    def test_document_actions(self):
+    def test_case01(self):
         credentials = {
             'email': rand_email(),
             'password': rand_password(),
         }
 
-        if DEBUG: print("credentials: ", credentials)
+        if DEBUG:
+            print("credentials: ", credentials)
 
         r = requests.post(url=make_public_api_url('/auth/profiles'), json=credentials)
         self.assertEqual(r.status_code, 200)
+
+        if DEBUG:
+            print('profile_status: ', r.json())
 
         info = r.json()
         user_id = info['userId']
@@ -74,13 +78,46 @@ class TestSum(unittest.TestCase):
             'Authorization': 'Bearer ' + auth_token
         }
 
-        if DEBUG: print("Headers: ", headers)
+        if DEBUG:
+            print("headers: ", headers)
+
+        r = requests.get(url=make_public_api_url('/users/' + user_id + '/profile'), headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+        profile = r.json()
+
+        if DEBUG:
+            print('profile: ', r.json())
+
+        profile_update = {
+            'username':    'the_' + profile['username'],
+            'fullName':    'The Full Name',
+            'dateOfBirth': '2000-01-01',
+        }
+
+        r = requests.patch(url=make_protected_api_url('/users/' + user_id + '/profile'),
+                           json=profile_update, headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+        r = requests.get(url=make_public_api_url('/users/' + user_id + '/profile'), headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+        profile = r.json()
+
+        if DEBUG:
+            print('new profile: ', profile)
+
+        r = requests.get(url=make_public_api_url('/users?username=' + profile['username']), headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+        if DEBUG:
+            print('search by username: ', r.json())
 
         r = requests.get(url=make_protected_api_url('/documents?owner_id=' + user_id), headers=headers)
         self.assertEqual(r.status_code, 404)
 
         document_info = {
-            'title': 'title',
+            'title':   'title',
             'subject': 'subject',
         }
 
@@ -91,15 +128,17 @@ class TestSum(unittest.TestCase):
         document_id = document_info['documentId']
         self.assertNotEqual(document_id, '')
 
-        if DEBUG: print("document_id: ", document_id)
+        if DEBUG:
+            print("document_id: ", document_id)
 
         r = requests.get(url=make_protected_api_url('/documents/' + document_id + '/content'), headers=headers)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b'')
 
         document_content = b'raw_document_content'
-        
-        if DEBUG: print("document_content: ", document_content)
+
+        if DEBUG:
+            print("document_content: ", document_content)
 
         r = requests.patch(url=make_protected_api_url('/documents/' + document_id + '/content'),
                            data=document_content, headers=headers)
